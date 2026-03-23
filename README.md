@@ -11,24 +11,9 @@
 npm install
 ```
 
-## 启动本地 shim
+## 配置 `.env`
 
-```bash
-set -a; source .env; set +a; npm run serve:shim
-```
-
-默认配置在 [examples/shim.config.example.json](examples/shim.config.example.json)。
-环境变量模板在 [.env.example](.env.example)。
-
-当前 shim 会：
-
-- 先调用 `POST https://chat-app.aifchem.com/api/thread/create`
-- 再调用 `POST https://chat-app.aifchem.com/api/message/chat`
-- 把上游 SSE 转成 OpenAI 风格的非流式或流式 delta 输出
-
-没有设置 `AIFCHEM_AUTHORIZATION` 时，进程会直接启动失败。
-
-## 获取 `.env` 里的环境变量
+启动本地 shim 之前，先按下面步骤把 `.env` 填好。复制.env.example
 
 推荐流程：
 
@@ -55,6 +40,22 @@ AIFCHEM_WORKFLOW_ID="<your-workflow-id>"
 注意：
 
 - `.env` 已在 `.gitignore` 中，不要把真实值写回示例文件。
+
+## 启动本地 shim
+
+环境变量模板在 [.env.example](.env.example)，默认配置在 [examples/shim.config.example.json](examples/shim.config.example.json)。
+
+```bash
+set -a; source .env; set +a; npm run serve:shim
+```
+
+当前 shim 会：
+
+- 先调用 `POST https://chat-app.aifchem.com/api/thread/create`
+- 再调用 `POST https://chat-app.aifchem.com/api/message/chat`
+- 把上游 SSE 转成 OpenAI 风格的非流式或流式 delta 输出
+
+没有设置 `AIFCHEM_AUTHORIZATION` 时，进程会直接启动失败。
 
 ## 本地调用
 
