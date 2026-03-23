@@ -1,0 +1,10 @@
+node_modules
+dist
+artifacts
+.DS_Store
+*.local.json
+__pycache__/
+.playwright-cli/
+.env
+.env.local
+.env.*.local

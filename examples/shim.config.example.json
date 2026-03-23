@@ -1,0 +1,24 @@
+{
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 4010
+  },
+  "upstream": {
+    "protocol": "chat_app_message_api",
+    "url": "https://chat-app.aifchem.com/api/message/chat",
+    "method": "POST",
+    "headers": {
+      "Authorization": "os.environ/AIFCHEM_AUTHORIZATION",
+      "Origin": "https://chat.aifchem.com",
+      "Referer": "https://chat.aifchem.com/"
+    },
+    "timeoutMs": 30000,
+    "chatApp": {
+      "conversationId": "os.environ/AIFCHEM_CONVERSATION_ID",
+      "workflowId": "os.environ/AIFCHEM_WORKFLOW_ID",
+      "createThreadPerRequest": true,
+      "parentMessageId": "",
+      "inputs": {}
+    }
+  }
+}

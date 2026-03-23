@@ -1,0 +1,17 @@
+{
+  "name": "redteaming-aifchem-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run:openai": "tsx src/cli.ts run --config ./examples/openai-target.example.json --scenarios ./examples/scenarios.safe.json",
+    "serve:shim": "tsx src/cli.ts serve-shim --config ./examples/shim.config.example.json",
+    "test": "node --test --import tsx ./test/**/*.test.ts",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
