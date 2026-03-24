@@ -99,3 +99,6 @@ __marimo__/
 .env.*.local
 .cursorignore
 .cursorindexingignore
+
+# Generated evaluation artifacts
+logs/

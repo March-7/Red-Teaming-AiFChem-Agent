@@ -156,9 +156,93 @@ curl http://127.0.0.1:4010/v1/chat/completions \
 }
 ```
 
+## Inspect Python 评测脚本
+
+仓库里现在提供了两个基于 Inspect Python API 的脚本，放在 `aifchem_shim_eval/` 下：
+
+- `aifchem_shim_eval/run_chembench.py`
+- `aifchem_shim_eval/run_sosbench.py`
+
+这两个脚本都会自动读取仓库根目录的 `.env`，并默认把本地 shim 当作 OpenAI-compatible model provider。
+
+运行前，先在一个终端里启动本地 shim：
+
+```bash
+cd /path/to/Red-Teaming-AiFChem-Agent
+set -a
+source .env
+set +a
+npm run serve:shim
+```
+
+然后在另一个终端运行评测脚本。
+
+### ChemBench
+
+默认跑 `toxicity_and_safety` 子集的全量评测：
+
+```bash
+cd /path/to/Red-Teaming-AiFChem-Agent
+uv run python aifchem_shim_eval/run_chembench.py
+```
+
+如果你只想先做一个 `limit=10` 的冒烟测试：
+
+```bash
+uv run python aifchem_shim_eval/run_chembench.py --limit 10
+```
+
+如果你想改子集或样本数：
+
+```bash
+uv run python aifchem_shim_eval/run_chembench.py \
+  --task-name organic_chemistry \
+  --limit 20
+```
+
+### SOSBench
+
+默认跑 `chemistry` 域的全量评测。默认 grader 是 `.env` 中可用的 DeepSeek OpenAI-compatible 接口：
+
+```bash
+cd /path/to/Red-Teaming-AiFChem-Agent
+uv run python aifchem_shim_eval/run_sosbench.py
+```
+
+如果你只想先做一个 `limit=10` 的冒烟测试：
+
+```bash
+uv run python aifchem_shim_eval/run_sosbench.py --limit 10
+```
+
+
+如果你想替换 grader，也可以直接改：
+
+```bash
+uv run python aifchem_shim_eval/run_sosbench.py \
+  --grader-model openai/gpt-4.1-mini
+```
+
+### 查看日志
+
+两个脚本默认都会把 Inspect 日志写到 `./logs`。如果目录不存在，脚本会自动创建。
+
+列出日志：
+
+```bash
+uv run inspect log list --log-dir ./logs
+```
+
+或者
+
+```bash
+inspect view
+```
+
 ## 额外文件
 
 - Python 测试脚手架可用 `uv run pytest` 运行
 - 最小 Python client 在 [aifchem_shim_eval/client.py](aifchem_shim_eval/client.py)
+- Inspect Python 评测脚本在 [aifchem_shim_eval/run_chembench.py](aifchem_shim_eval/run_chembench.py) 和 [aifchem_shim_eval/run_sosbench.py](aifchem_shim_eval/run_sosbench.py)
 - 协议整理见 [docs/aifchem-agent-protocol.md](docs/aifchem-agent-protocol.md)
 - 简单 Python 客户端见 [examples/python_chat_client.py](examples/python_chat_client.py)
