@@ -58,6 +58,27 @@ function getLastUserText(messages: OpenAIChatMessage[]): string {
   return lastUser ? normalizeContent(lastUser.content) : "";
 }
 
+function formatChatAppTranscript(messages: OpenAIChatMessage[]): string {
+  return messages
+    .map((message) => {
+      const content = normalizeContent(message.content);
+      return `${message.role.toUpperCase()}:\n${content || "(empty)"}`;
+    })
+    .join("\n\n");
+}
+
+export function buildChatAppQuery(messages: OpenAIChatMessage[]): string {
+  if (messages.length <= 1) {
+    return getLastUserText(messages);
+  }
+
+  return [
+    "The following is the full conversation transcript so far.",
+    formatChatAppTranscript(messages),
+    "Continue the conversation as the assistant and answer the latest user message using the prior assistant and tool context when relevant.",
+  ].join("\n\n");
+}
+
 function getMetadataString(request: OpenAIChatCompletionRequest, key: string): string | undefined {
   const value = request.metadata?.[key];
   return typeof value === "string" && value ? value : undefined;
@@ -87,7 +108,7 @@ export function mapOpenAIRequestToChatAppMessageApi(
     workflow_id: overrides.workflowId ?? getMetadataString(request, "workflow_id") ?? chatApp.workflowId,
     parent_message_id:
       overrides.parentMessageId ?? getMetadataString(request, "parent_message_id") ?? chatApp.parentMessageId ?? "",
-    query: getLastUserText(request.messages),
+    query: buildChatAppQuery(request.messages),
     inputs: chatApp.inputs ?? {},
   };
 }

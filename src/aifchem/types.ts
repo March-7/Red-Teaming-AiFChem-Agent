@@ -17,6 +17,11 @@ export interface AifchemStreamEvent {
   text?: string;
   done?: boolean;
   error?: string;
+  conversation_id?: string;
+  thread_id?: string;
+  workflow_id?: string;
+  message_id?: string;
+  metadata?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -52,6 +57,10 @@ export interface ShimConfig {
       conversationId?: string;
       threadCreateUrl?: string;
       createThreadPerRequest?: boolean;
+      reuseThreadWithinSession?: boolean;
+      sessionTtlMs?: number;
+      filterUiPayloads?: boolean;
+      filterDisclaimers?: boolean;
       workflowId: string;
       parentMessageId?: string;
       inputs?: Record<string, unknown>;

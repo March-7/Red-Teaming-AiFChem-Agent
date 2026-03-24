@@ -17,6 +17,10 @@
       "conversationId": "os.environ/AIFCHEM_CONVERSATION_ID",
       "workflowId": "os.environ/AIFCHEM_WORKFLOW_ID",
       "createThreadPerRequest": true,
+      "reuseThreadWithinSession": true,
+      "sessionTtlMs": 1800000,
+      "filterUiPayloads": true,
+      "filterDisclaimers": true,
       "parentMessageId": "",
       "inputs": {}
     }

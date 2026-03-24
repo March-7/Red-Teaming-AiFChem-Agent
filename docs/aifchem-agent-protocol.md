@@ -75,7 +75,7 @@ Content-Type: text/event-stream
 data: {"conversation_id":"...","thread_id":"...","workflow_id":"...","message_id":"...","content":"I","data_type":"markdown","metadata":{"status":"running"}}
 ```
 
-`content` 在真实站点上表现为 token 级 delta，而不是累计全文。复用同一个固定 `thread_id` 时，上游会返回 `There are unfinished messages in the current thread`，所以 shim 默认按请求自动创建新 thread。
+`content` 在真实站点上表现为 token 级 delta，而不是累计全文。历史上直接复用同一个固定 `thread_id` 时，上游可能返回 `There are unfinished messages in the current thread`，所以 shim 不能只依赖“固定 thread + 最后一条 user 文本”。
 
 ## Shim 映射
 
@@ -96,10 +96,21 @@ OpenAI 输入：
 
 shim 行为：
 
-1. 用配置中的 `conversationId` 调 `/api/thread/create`
-2. 取返回的 `data.id` 作为 `thread_id`
-3. 用最后一条 `user` 消息内容填充 `query`
+1. 如果请求里带了 `metadata.session_id`，shim 会优先读取这个 session 上次成功响应保存的 `thread_id / parent_message_id / workflow_id / conversation_id`
+2. 如果当前没有可复用 thread，shim 会用 `conversationId` 调 `/api/thread/create`
+3. 把完整 OpenAI `messages` 序列化成一个单字符串 `query`，而不是只取最后一条 `user`
 4. 把上游 SSE 转成 OpenAI `chat.completion.chunk`
+5. 从上游 SSE 提取最新的 `thread_id / message_id / workflow_id / conversation_id`，写回 shim 内部 session 状态
+6. 如果复用旧 thread 时收到 `There are unfinished messages in the current thread`，shim 会自动新建 thread，并用同一份 `messages` 重新发起请求
+
+## 推荐调用方式
+
+为了让“多轮对话”和“多步工具调用 agent”都尽量稳，推荐调用方每轮都同时提供：
+
+1. 完整的 OpenAI `messages` 历史
+2. 稳定的 `metadata.session_id`
+
+这样 shim 既可以优先复用真实上游 thread，也可以在 thread 续用失败时退回到“新 thread + 完整历史重放”。
 
 OpenAI 流式输出示例：
 
