@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "Red-Teaming-AiFChem-Agent"
+version = "0.1.0"
+description = "Minimal Python test scaffold for the local AIFChem OpenAI-compatible shim."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["python_tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aifchem_shim_eval"]

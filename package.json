@@ -1,10 +1,9 @@
 {
-  "name": "redteaming-aifchem-agent",
+  "name": "aifchem-openai-shim",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "run:openai": "tsx src/cli.ts run --config ./examples/openai-target.example.json --scenarios ./examples/scenarios.safe.json",
     "serve:shim": "tsx src/cli.ts serve-shim --config ./examples/shim.config.example.json",
     "test": "node --test --import tsx ./test/**/*.test.ts",
     "check": "tsc --noEmit"

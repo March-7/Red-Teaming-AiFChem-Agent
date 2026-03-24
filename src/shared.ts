@@ -1,22 +1,5 @@
 import path from "node:path";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-
-export function utcTimestamp(): string {
-  return new Date().toISOString().replace(/[:.]/g, "-");
-}
-
-export async function ensureDir(dirPath: string): Promise<void> {
-  await mkdir(dirPath, { recursive: true });
-}
-
-export async function writeText(filePath: string, content: string): Promise<void> {
-  await ensureDir(path.dirname(filePath));
-  await writeFile(filePath, content, "utf8");
-}
-
-export async function writeJson(filePath: string, data: unknown): Promise<void> {
-  await writeText(filePath, `${JSON.stringify(data, null, 2)}\n`);
-}
+import { readFile } from "node:fs/promises";
 
 export async function readJson<T>(filePath: string): Promise<T> {
   const raw = await readFile(filePath, "utf8");
@@ -48,10 +31,6 @@ export function parseArgs(argv: string[]): Record<string, string | boolean> {
 
 export function toAbsolute(filePath: string): string {
   return path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
-}
-
-export function snippet(text: string, max = 280): string {
-  return text.length <= max ? text : `${text.slice(0, max)}...`;
 }
 
 export function resolveEnvPlaceholders<T>(value: T): T {

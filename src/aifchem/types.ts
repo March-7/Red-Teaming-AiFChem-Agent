@@ -58,11 +58,3 @@ export interface ShimConfig {
     };
   };
 }
-
-export interface OpenAICompatibleConfig {
-  baseUrl: string;
-  path?: string;
-  apiKey?: string;
-  model: string;
-  stream?: boolean;
-}

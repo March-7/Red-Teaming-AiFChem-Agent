@@ -1,14 +1,25 @@
-# Redteaming AI FChem Agent
+# AIFChem OpenAI Shim
 
-这个仓库现在只保留两条主线：
+这个仓库现在只保留一条主线：
 
-1. 把 AIFChem 的真实网页聊天接口适配成 OpenAI `/v1/chat/completions`
-2. 把后续 red-team / eval 流量统一打到这个 OpenAI 兼容入口
+把 AIFChem 的真实网页聊天接口适配成 OpenAI `/v1/chat/completions`。
 
 ## 安装
 
 ```bash
 npm install
+```
+
+如果要运行 Python 测试脚手架，先安装 `uv`：
+
+```bash
+python3 -m pip install --user uv -i https://pypi.org/simple
+```
+
+然后在仓库根目录初始化 Python 环境：
+
+```bash
+uv sync --dev
 ```
 
 ## 配置 `.env`
@@ -89,19 +100,9 @@ curl -N http://127.0.0.1:4010/v1/chat/completions \
   }'
 ```
 
-## 评测入口
-
-通过 OpenAI 兼容入口运行评测：
-
-```bash
-npm run run:openai
-```
-
-配置示例在 [examples/openai-target.example.json](examples/openai-target.example.json)，场景示例在 [examples/scenarios.safe.json](examples/scenarios.safe.json)。
-
-LiteLLM 示例配置在 [examples/litellm.config.yaml](examples/litellm.config.yaml)。
-
 ## 额外文件
 
+- Python 测试脚手架可用 `uv run pytest` 运行
+- 最小 Python client 在 [aifchem_shim_eval/client.py](aifchem_shim_eval/client.py)
 - 协议整理见 [docs/aifchem-agent-protocol.md](docs/aifchem-agent-protocol.md)
 - 简单 Python 客户端见 [examples/python_chat_client.py](examples/python_chat_client.py)
