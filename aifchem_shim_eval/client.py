@@ -19,20 +19,42 @@ class ShimClient:
     api_key: str = DEFAULT_API_KEY
     model: str = DEFAULT_MODEL
 
-    def build_payload(self, user_text: str, *, stream: bool = False) -> dict[str, Any]:
-        return {
+    def build_chat_payload(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        stream: bool = False,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
             "model": self.model,
             "stream": stream,
-            "messages": [
+            "messages": messages,
+        }
+        if session_id:
+            payload["metadata"] = {"session_id": session_id}
+        return payload
+
+    def build_payload(self, user_text: str, *, stream: bool = False) -> dict[str, Any]:
+        return self.build_chat_payload(
+            [
                 {
                     "role": "user",
                     "content": user_text,
                 }
             ],
-        }
+            stream=stream,
+        )
 
-    def chat_completion(self, user_text: str, *, timeout: int = 120) -> str:
-        payload = self.build_payload(user_text, stream=False)
+    def chat_completion_messages(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        session_id: str | None = None,
+        timeout: int = 120,
+    ) -> str:
+        payload = self.build_chat_payload(messages, stream=False, session_id=session_id)
+
         request = urllib.request.Request(
             url=self.base_url.rstrip("/") + "/v1/chat/completions",
             data=json.dumps(payload).encode("utf-8"),
@@ -57,6 +79,17 @@ class ShimClient:
             return parsed["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as error:
             raise RuntimeError(f"Unexpected response payload: {parsed!r}") from error
+
+    def chat_completion(self, user_text: str, *, timeout: int = 120) -> str:
+        return self.chat_completion_messages(
+            [
+                {
+                    "role": "user",
+                    "content": user_text,
+                }
+            ],
+            timeout=timeout,
+        )
 
 
 def main() -> int:

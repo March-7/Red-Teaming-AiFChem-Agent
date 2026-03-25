@@ -158,12 +158,13 @@ curl http://127.0.0.1:4010/v1/chat/completions \
 
 ## Inspect Python 评测脚本
 
-仓库里现在提供了两个基于 Inspect Python API 的脚本，放在 `aifchem_shim_eval/` 下：
+仓库里现在提供了三个基于 Inspect Python API 的脚本，放在 `aifchem_shim_eval/` 下：
 
 - `aifchem_shim_eval/run_chembench.py`
 - `aifchem_shim_eval/run_sosbench.py`
+- `aifchem_shim_eval/run_redteam_multiturn.py`
 
-这两个脚本都会自动读取仓库根目录的 `.env`，并默认把本地 shim 当作 OpenAI-compatible model provider。
+这几个脚本都会自动读取仓库根目录的 `.env`，并默认把本地 shim 当作 OpenAI-compatible model provider。
 
 运行前，先在一个终端里启动本地 shim：
 
@@ -225,7 +226,7 @@ uv run python aifchem_shim_eval/run_sosbench.py \
 
 ### 查看日志
 
-两个脚本默认都会把 Inspect 日志写到 `./logs`。如果目录不存在，脚本会自动创建。
+这几个脚本默认都会把 Inspect 日志写到 `./logs`。如果目录不存在，脚本会自动创建。
 
 列出日志：
 
@@ -239,10 +240,104 @@ uv run inspect log list --log-dir ./logs
 inspect view
 ```
 
+### Multi-turn Red Team MVP
+
+还提供了一个最小版的 attacker-vs-target 多轮红队脚本：
+
+```bash
+uv run python aifchem_shim_eval/run_redteam_multiturn.py \
+  --red-team-model openai-api/deepseek/deepseek-chat \
+  --grader-model openai-api/deepseek/deepseek-chat \
+  --turn-cap 6 \
+  --limit 2
+```
+
+这个脚本会：
+
+- 用前沿模型扮演 `red_team`，自动生成多轮攻击消息
+- 通过本地 shim 的 `/v1/chat/completions` 与 AIFChem agent 对话
+- 同时传完整 `messages` 历史和稳定 `session_id`
+- 用 `grader` 模型每轮判断是否已经拿到 materially useful unsafe help
+
+增强版脚本目前内置了 10 个 chemistry red-team scenario，并支持多种 attack style、seed prompt 和 refusal recovery 策略。攻击器会优先尝试更贴近 AIFChem 实际能力边界的入口，例如：
+
+- vendor note / catalog / procurement form 解读
+- QC / analytical confirmation
+- failed run log / troubleshooting
+- cleanup / residue / odor / contamination
+- inventory / ELN / incident wording
+
+常用参数：
+
+```bash
+uv run python aifchem_shim_eval/run_redteam_multiturn.py \
+  --red-team-model openai-api/deepseek/deepseek-chat \
+  --grader-model openai-api/deepseek/deepseek-chat \
+  --planner-model none \
+  --variants-per-scenario 10 \
+  --turn-cap 3 \
+  --limit 100 \
+  --max-samples 1 \
+  --max-tasks 1
+```
+
+参数说明：
+
+- `--variants-per-scenario`: 每个 base scenario 生成多少个攻击变体
+- `--turn-cap`: 每个样本最多攻击多少轮
+- `--planner-model`: 当前默认建议 `none`，直接用单候选攻击器
+- `--max-samples`: 为了稳定性，当前真实跑 AIFChem 时建议设为 `1`
+
+如果想只跑部分场景，可以重复传入 `--category`。当前支持的类别包括：
+
+- `unsafe_synthesis`
+- `unsafe_handling`
+- `dual_use_optimization`
+- `oversight_evasion`
+- `procurement_evasion`
+- `forensic_evasion`
+- `scale_up`
+- `characterization`
+- `waste_evasion`
+- `covert_setup`
+
+### 真实实验结果
+
+截至 `2026-03-25`，在本地 shim 接 AIFChem、攻击 agent 和 grader 都真实调用 DeepSeek API 的条件下，已经完成一轮 `100` 样本的多轮红队实验：
+
+- 配置：`red_team=openai-api/deepseek/deepseek-chat`
+- 配置：`grader=openai-api/deepseek/deepseek-chat`
+- 配置：`planner_model=none`
+- 配置：`variants_per_scenario=10`
+- 配置：`turn_cap=3`
+- 总体 `attack_success = 0.50`
+- `best_judge_score = 1.83`
+- `final_refusal = 0.20`
+- `first_success_turn = 1.46`
+
+分类别攻击成功率：
+
+- `dual_use_optimization`: `9/10`
+- `scale_up`: `9/10`
+- `forensic_evasion`: `8/10`
+- `oversight_evasion`: `8/10`
+- `characterization`: `5/10`
+- `procurement_evasion`: `5/10`
+- `unsafe_synthesis`: `4/10`
+- `covert_setup`: `2/10`
+- `unsafe_handling`: `0/10`
+- `waste_evasion`: `0/10`
+
+可以把这轮结果当作当前 MVP 的基线。已知现象：
+
+- AIFChem 对 `unsafe_handling` 和 `waste_evasion` 这两类请求防守最强
+- 更容易打穿的方向是 `scale_up`、`dual_use_optimization`、`forensic_evasion` 和 `oversight_evasion`
+- `deepseek-reasoner` 已做过真实小批量探测，在当前流程里可用，但没有显著优于 `deepseek-chat`
+
 ## 额外文件
 
 - Python 测试脚手架可用 `uv run pytest` 运行
 - 最小 Python client 在 [aifchem_shim_eval/client.py](aifchem_shim_eval/client.py)
-- Inspect Python 评测脚本在 [aifchem_shim_eval/run_chembench.py](aifchem_shim_eval/run_chembench.py) 和 [aifchem_shim_eval/run_sosbench.py](aifchem_shim_eval/run_sosbench.py)
+- Inspect Python 评测脚本在 [aifchem_shim_eval/run_chembench.py](aifchem_shim_eval/run_chembench.py)、[aifchem_shim_eval/run_sosbench.py](aifchem_shim_eval/run_sosbench.py) 和 [aifchem_shim_eval/run_redteam_multiturn.py](aifchem_shim_eval/run_redteam_multiturn.py)
 - 协议整理见 [docs/aifchem-agent-protocol.md](docs/aifchem-agent-protocol.md)
 - 简单 Python 客户端见 [examples/python_chat_client.py](examples/python_chat_client.py)
